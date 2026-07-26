@@ -1,22 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Users, Plus, RotateCcw, X, ChevronDown, Search, Sparkles, Activity, Leaf, HeartPulse, Sun, Moon, BarChart3, Settings as SettingsIcon, DollarSign, ShieldCheck, TrendingUp, LogOut, Printer, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Plus, RotateCcw, X, ChevronDown, Search, Sparkles, Activity, Leaf, HeartPulse, Sun, Moon, BarChart3, Settings as SettingsIcon, DollarSign, ShieldCheck, TrendingUp, LogOut, Printer, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function App() {
   const [mounted, setMounted] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
-  
-  // Toast Notification State
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
-  };
   
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -167,10 +157,7 @@ export default function App() {
   }
 
   async function handleSaveFromDashboard() {
-    if (!newPatient.Name.trim()) {
-      showToast("Name field khali hai!", "error");
-      return;
-    }
+    if (!newPatient.Name.trim()) return alert("Name field khali hai!");  
     let finalMedicine = newPatient.isCrushed ? newPatient.Medicine + " ✨ [CRUSH]" : newPatient.Medicine;  
     const { error } = await supabase.from('patients_table').insert([{  
       Name: capitalizeFirstLetter(newPatient.Name),  
@@ -181,20 +168,12 @@ export default function App() {
       Additional: capitalizeFirstLetter(newPatient.Additional),  
       Date: newPatient.Date  
     }]);
-    if (error) {
-      showToast("Error: " + error.message, "error");
-    } else { 
-      showToast("Patient save successfully!"); 
-      fetchData(); 
-      handleClearDashboardForm(); 
-    }  
+    if (error) alert("Error: " + error.message);  
+    else { alert("Saved successfully!"); fetchData(); handleClearDashboardForm(); }  
   }
 
   async function handleUpdateFromDashboard() {
-    if (!newPatient.Id) {
-      showToast("Select a patient first!", "error");
-      return;
-    }
+    if (!newPatient.Id) return alert("Select a patient first!");  
     let finalMedicine = newPatient.isCrushed ? newPatient.Medicine + " ✨ [CRUSH]" : newPatient.Medicine;  
     const { error } = await supabase.from('patients_table').update({  
       Name: capitalizeFirstLetter(newPatient.Name),  
@@ -205,35 +184,20 @@ export default function App() {
       Additional: capitalizeFirstLetter(newPatient.Additional),  
       Date: newPatient.Date  
     }).eq('Id', newPatient.Id);  
-    if (error) {
-      showToast("Error: " + error.message, "error");
-    } else { 
-      showToast("Patient record successfully updated"); 
-      fetchData(); 
-    }  
+    if (error) alert("Error: " + error.message);  
+    else { alert("Update kamyab raha!"); fetchData(); }  
   }
 
   async function handleDeleteFromDashboard() {
-    if (!newPatient.Id) {
-      showToast("Select a patient first!", "error");
-      return;
-    }
+    if (!newPatient.Id) return alert("Select a patient first!");  
     if (!confirm("Delete karna chahte hain?")) return;  
     const { error } = await supabase.from('patients_table').delete().eq('Id', newPatient.Id);  
-    if (error) {
-      showToast("Error: " + error.message, "error");
-    } else { 
-      showToast("Patient record delete successfully!"); 
-      fetchData(); 
-      handleClearDashboardForm(); 
-    }  
+    if (error) alert("Error: " + error.message);  
+    else { alert("Deleted!"); fetchData(); handleClearDashboardForm(); }  
   }
 
   async function handleSaveFromModal() {
-    if (!modalPatient.Name.trim()) {
-      showToast("Name field khali hai!", "error");
-      return;
-    }
+    if (!modalPatient.Name.trim()) return alert("Name field khali hai!");  
     let finalMedicine = modalPatient.isCrushed ? modalPatient.Medicine + " ✨ [CRUSH]" : modalPatient.Medicine;  
     const { error } = await supabase.from('patients_table').insert([{  
       Name: capitalizeFirstLetter(modalPatient.Name),  
@@ -244,20 +208,12 @@ export default function App() {
       Additional: capitalizeFirstLetter(modalPatient.Additional),  
       Date: modalPatient.Date  
     }]);
-    if (error) {
-      showToast("Error: " + error.message, "error");
-    } else { 
-      showToast("Patient successfully save ho gaya hai!"); 
-      fetchData(); 
-      setIsModalOpen(false); 
-    }  
+    if (error) alert("Error: " + error.message);  
+    else { alert("Saved successfully!"); fetchData(); setIsModalOpen(false); }  
   }
 
   async function handleUpdateFromModal() {
-    if (!modalPatient.Id) {
-      showToast("Patient ID missing!", "error");
-      return;
-    }
+    if (!modalPatient.Id) return alert("Patient ID missing!");  
     let finalMedicine = modalPatient.isCrushed ? modalPatient.Medicine + " ✨ [CRUSH]" : modalPatient.Medicine;  
     const { error } = await supabase.from('patients_table').update({  
       Name: capitalizeFirstLetter(modalPatient.Name),  
@@ -268,31 +224,19 @@ export default function App() {
       Additional: capitalizeFirstLetter(modalPatient.Additional),  
       Date: modalPatient.Date  
     }).eq('Id', modalPatient.Id);  
-    if (error) {
-      showToast("Error: " + error.message, "error");
-    } else { 
-      showToast("Patient record successfully update ho gaya hai!"); 
-      fetchData(); 
-      setIsModalOpen(false); 
-    }  
+    if (error) alert("Error: " + error.message);  
+    else { alert("Updated successfully!"); fetchData(); setIsModalOpen(false); }  
   }
 
   async function handleDeleteFromModal() {
-    if (!modalPatient.Id) {
-      showToast("Patient ID missing!", "error");
-      return;
-    }
+    if (!modalPatient.Id) return alert("Patient ID missing!");  
     if (!confirm("Delete karna chahte hain?")) return;  
     const { error } = await supabase.from('patients_table').delete().eq('Id', modalPatient.Id);  
-    if (error) {
-      showToast("Error: " + error.message, "error");
-    } else { 
-      showToast("Patient record delete ho gaya hai!"); 
-      fetchData(); 
-      setIsModalOpen(false); 
-    }  
+    if (error) alert("Error: " + error.message);  
+    else { alert("Deleted!"); fetchData(); setIsModalOpen(false); }  
   }
 
+  // ENHANCED PDF DOWNLOAD HANDLER WITH JSPDF[cite: 2] (Matches modal slip view design)
   const handleDownloadSlip = async () => {
     const pName = selectedPatient ? selectedPatient.Name : (newPatient.Name || "Patient");
     const pDate = selectedPatient ? selectedPatient.Date : newPatient.Date;
@@ -412,13 +356,13 @@ export default function App() {
       const splitMeds = doc.splitTextToSize(medContent, 106);
       const boxHeight = Math.max(16, (splitMeds.length * 6) + 6);
 
-      doc.setFillColor(240, 253, 250);
+      doc.setFillColor(240, 253, 250); 
       doc.setDrawColor(204, 251, 241);
       doc.roundedRect(16, yPos, 116, boxHeight, 2, 2, 'FD');
 
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(17, 94, 89);
+      doc.setTextColor(17, 94, 89); 
       doc.text(splitMeds, 22, yPos + 6);
 
       yPos += boxHeight + 10;
@@ -446,7 +390,7 @@ export default function App() {
       doc.save(`Slip_${pName.replace(/\s+/g, '_')}_${pDate}.pdf`);
     } catch (err) {
       console.error("PDF generation error:", err);
-      showToast("PDF generate karne mein masla aaya hai.", "error");
+      alert("PDF generate karne mein masla aaya hai.");
     }
   };
 
@@ -469,18 +413,7 @@ export default function App() {
       setOpenModalDropdown(null);  
     }}
     >
-      {/* TOAST NOTIFICATION CONTAINER */}
-      {toast && (
-        <div className="fixed top-5 right-5 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md animate-bounce transition-all duration-300 bg-white dark:bg-slate-900 border-rose-200 dark:border-slate-700 text-slate-900 dark:text-white">
-          {toast.type === 'success' ? (
-            <CheckCircle2 size={20} className="text-emerald-500 flex-shrink-0" />
-          ) : (
-            <AlertCircle size={20} className="text-rose-500 flex-shrink-0" />
-          )}
-          <span className="text-xs sm:text-sm font-black">{toast.message}</span>
-        </div>
-      )}
-
+      
       {/* HEADER */}
       <header className={`h-14 px-3 sm:px-5 flex-shrink-0 flex justify-between items-center z-40 border-b transition-colors duration-300 relative ${  
         darkMode 
@@ -509,16 +442,16 @@ export default function App() {
             <span className={`text-base sm:text-lg font-black tracking-wider uppercase bg-gradient-to-r ${  
               darkMode ? 'from-amber-200 via-yellow-400 to-amber-300' : 'from-amber-600 via-yellow-600 to-amber-700'  
             } bg-clip-text text-transparent drop-shadow-sm`}>
-              Hakeem Amjad Maqsood  -   حکیم امجد مقصود
+              Hakeem Amjad Maqsood
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-5">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className={`hidden sm:block text-xs font-bold font-serif px-3.5 py-1.5 rounded-xl border shadow-sm ${  
             darkMode ? 'bg-slate-800/60 border-slate-700 text-rose-300' : 'bg-white/60 border-rose-200/60 text-rose-900'  
           }`}>
-            بِسْمِ  اللَّهِ  الرَّحْمَٰنِ  الرَّحِيمِ
+            بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </div>
 
           <button 
@@ -536,10 +469,10 @@ export default function App() {
       <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden relative">
         
         {/* SIDEBAR */}
-        <aside className={`w-full lg:w-56 flex-shrink-0 border-b lg:border-r flex lg:flex-col justify-between p-2.5 sm:p-3.5 gap-2 sm:gap-3 overflow-x-auto ${  
+        <aside className={`w-full lg:w-56 flex-shrink-0 border-b lg:border-r flex flex-row lg:flex-col justify-between items-center lg:items-stretch p-2.5 sm:p-3.5 gap-2 sm:gap-3 overflow-x-auto ${  
           darkMode ? 'bg-[#181e22]/80 border-slate-800' : 'bg-white/60 border-rose-100/60 backdrop-blur-md'  
         }`}>
-          <div className="flex lg:flex-col gap-2.5 sm:gap-3 w-full">
+          <div className="flex flex-row lg:flex-col gap-2.5 sm:gap-3 w-full overflow-x-auto lg:overflow-visible items-center lg:items-stretch">
             <button 
               onClick={() => setActiveTab('dashboard')}  
               className={`flex items-center gap-2.5 sm:gap-3 px-3.5 sm:px-4 py-2.5 sm:py-3.5 rounded-2xl font-extrabold text-xs sm:text-sm transition-all whitespace-nowrap lg:w-full text-left shadow-sm ${  
@@ -599,24 +532,14 @@ export default function App() {
             </div>
           </div>
 
-          <div className="hidden lg:block pt-3 border-t border-rose-200/40 dark:border-slate-800">
+          <div className="pt-0 lg:pt-3 lg:border-t border-rose-200/40 dark:border-slate-800 flex-shrink-0">
             <button 
               onClick={() => setIsLogoutConfirmOpen(true)}  
               title="Logout"
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
+              className="w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 lg:px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group whitespace-nowrap"
             >
-              <LogOut size={16} className="transition-transform duration-300 group-hover:-translate-x-1" />  
-              <span>Logout</span>
-            </button>
-          </div>
-
-          <div className="lg:hidden flex items-center">
-            <button 
-              onClick={() => setIsLogoutConfirmOpen(true)}  
-              title="Logout"
-              className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"
-            >
-              <LogOut size={16} />  
+              <LogOut size={16} className="transition-transform duration-300 group-hover:-translate-x-1 flex-shrink-0" />  
+              <span className="hidden lg:inline">Logout</span>
             </button>
           </div>
         </aside>
