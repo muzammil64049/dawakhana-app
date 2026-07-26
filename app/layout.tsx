@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dawakhana App",
+  title: "M Mehmood Unani Dawakhana",
   description: "Patient entry system",
 };
 
