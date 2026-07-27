@@ -55,7 +55,7 @@ export default function App() {
     { name: "HAB E Sugar", options: ["28 Sugar", "21 Sugar", "14 Sugar", "7 Sugar"] },
     { name: "HAB E Khaas", options: ["28 Khaas", "21 Khaas", "14 Khaas", "7 Khaas", "28 Khaas Capsule", "21 Khaas Capsule", "14 Khaas Capsule", "7 Khaas Capsule"] },
     { name: "HAB E Tankaar", options: ["28 Tankaar Black", "21 Tankaar Black", "14 Tankaar Black", "7 Tankaar Black", "28 Tankaar Orange", "21 Tankaar Orange", "14 Tankaar Orange", "7 Tankaar Orange"] },
-    { name: "Safoof", options: ["Safoof E Khaas", "Safoof E Sugar", "Majoon E khaas Safoof"] },
+    { name: "Safoof", options: ["Safoof E Khaas", "Safoof E Sugar", "Majoon E khaas", "Majoon E khaas Powder"] },
     { name: "Powder", options: ["Gas Powder", "Mubarak Powder", "Ruqat Powder", "Maleen Jadeed Powder"] },
     { name: "Syrup", options: ["Zafrani Faulad", "Faulad", "Jigar Faulad", "Podina", "Peppermint", "Carbo", "Hazim", "Akseer E Maida", "Gastorin", "Gastorin S", "Gastinol", "Gastinol S", "General tonic", "Taryaq E Sada", "Sual", "Sarfol", "Sadar", "Akseer E Bukhar", "Gonocare", "Taqat", "Taqat S", "Artho", "Sakoon E Qalb", "Sakoon E Qalb S", "Ashoka"] }
   ];
@@ -75,7 +75,7 @@ export default function App() {
   }, []);
 
   async function fetchData() {
-    const { data, error } = await supabase.from('patients_table').select('*').order('Id', { ascending: false }).limit(50); 
+    const { data, error } = await supabase.from('patients_table').select('*').order('Id', { ascending: false }).limit(5); 
     if (error) {
       console.error("Error fetching data:", error);  
     } else if (data) {
@@ -105,7 +105,13 @@ export default function App() {
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;  
     setSearchTerm(val);  
-    handleServerSearch(val);  
+    // Auto-search removed here
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      handleServerSearch(searchTerm);
+    }
   }
 
   function handleClearFilters() {
@@ -236,7 +242,6 @@ export default function App() {
     else { alert("Deleted!"); fetchData(); setIsModalOpen(false); }  
   }
 
-  // ENHANCED PDF DOWNLOAD HANDLER WITH JSPDF[cite: 2] (Matches modal slip view design)
   const handleDownloadSlip = async () => {
     const pName = selectedPatient ? selectedPatient.Name : (newPatient.Name || "Patient");
     const pDate = selectedPatient ? selectedPatient.Date : newPatient.Date;
@@ -996,11 +1001,24 @@ export default function App() {
                         placeholder="Search patients..." 
                         value={searchTerm}  
                         onChange={handleSearchChange}  
+                        onKeyDown={handleKeyDown}
                         className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold outline-none transition h-11 ${  
                           darkMode ? 'bg-slate-900 border-slate-800 text-white focus:border-rose-500' : 'bg-rose-50/30 border-rose-100 focus:border-rose-400'  
                         }`} 
                       />
                     </div>
+                    {/* Search Button */}
+                    <button 
+                      onClick={() => handleServerSearch(searchTerm)}  
+                      title="Search"
+                      className={`px-3 py-2.5 rounded-xl border text-xs sm:text-sm font-bold transition h-11 flex items-center justify-center gap-1 ${  
+                        darkMode ? 'bg-slate-900 border-slate-800 text-teal-400 hover:bg-slate-800' : 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100'  
+                      }`}
+                    >
+                      <Search size={14} />
+                      <span className="hidden sm:inline">Search</span>
+                    </button>
+
                     {searchTerm && (
                       <button 
                         onClick={handleClearFilters}  
