@@ -8,6 +8,10 @@ export default function App() {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
   
+  // Idle GIF state for 5 minutes inactivity
+  const [isIdle, setIsIdle] = useState(false);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('unani_dark_mode');
@@ -21,6 +25,27 @@ export default function App() {
       localStorage.setItem('unani_dark_mode', JSON.stringify(darkMode));
     }
   }, [darkMode]);
+
+  // 5 Minutes Idle Timer Logic (300,000 ms)
+  useEffect(() => {
+    const resetIdleTimer = () => {
+      setIsIdle(false);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        setIsIdle(true);
+      }, 300000);
+    };
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetIdleTimer));
+
+    resetIdleTimer();
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      events.forEach(event => window.removeEventListener(event, resetIdleTimer));
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'all-patients' | 'analytics' | 'settings'>('dashboard');
   const [patients, setPatients] = useState<any[]>([]);
@@ -105,7 +130,6 @@ export default function App() {
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;  
     setSearchTerm(val);  
-    // Auto-search removed here
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -408,7 +432,7 @@ export default function App() {
   if (!mounted) return null;  
 
   return (
-    <div className={`min-h-screen lg:h-screen w-full lg:w-screen overflow-x-hidden lg:overflow-hidden font-sans flex flex-col transition-colors duration-300 selection:bg-indigo-500 selection:text-white ${  
+    <div className={`min-h-screen lg:h-screen w-full lg:w-screen overflow-x-hidden lg:overflow-hidden font-sans flex flex-col transition-colors duration-300 selection:bg-indigo-500 selection:text-white relative ${  
       darkMode 
         ? 'bg-[#121619] text-slate-100'  
         : 'bg-gradient-to-br from-[#fffbfa] via-[#fdf6f5] to-[#f4f7f6] text-slate-800'  
@@ -419,6 +443,48 @@ export default function App() {
     }}
     >
       
+      {/* CSS Animations for Large Side Texts & Marquee */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes singleUpDownBlink {
+          0% { transform: translateY(-35px); opacity: 0.2; }
+          50% { transform: translateY(35px); opacity: 1; text-shadow: 0 0 30px rgba(220,38,38,0.8); }
+          100% { transform: translateY(-35px); opacity: 0.2; }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { transform: scale(1); opacity: 0.9; }
+          50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 20px rgba(5,150,105,0.6)); }
+        }
+        @media (max-width: 1200px) {
+          .side-decoration { display: none !important; }
+        }
+      `}} />
+
+      {/* 5-MINUTES IDLE ANIMATED FLOATING GIF OVERLAY */}
+      {isIdle && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center pointer-events-none overflow-hidden">
+          <style dangerouslySetInnerHTML={{ __html: `
+            @keyframes randomFloat {
+              0% { transform: translate(0px, 0px) rotate(0deg); }
+              25% { transform: translate(-150px, -120px) rotate(90deg); }
+              50% { transform: translate(180px, 140px) rotate(180deg); }
+              75% { transform: translate(-120px, 150px) rotate(270deg); }
+              100% { transform: translate(0px, 0px) rotate(360deg); }
+            }
+            .floating-gif {
+              animation: randomFloat 12s ease-in-out infinite alternate;
+            }
+          `}} />
+         <div className="floating-gif p-3 bg-gradient-to-r from-rose-500 via-teal-500 to-amber-500 rounded-full shadow-2xl">
+    <img 
+      src="/M mehmood unani dawakhhana.gif" 
+      alt="M Mehmood Unani Dawakhhana" 
+      className="w-56 h-56 sm:w-100 sm:h-100 object-cover rounded-full border-4 border-white shadow-2xl"
+    />
+</div>
+        </div>
+      )}
+
+
       {/* HEADER */}
       <header className={`h-14 px-3 sm:px-5 flex-shrink-0 flex justify-between items-center z-40 border-b transition-colors duration-300 relative ${  
         darkMode 
@@ -1273,32 +1339,17 @@ export default function App() {
                     <p className="text-xs text-slate-400 font-semibold">Switch between dark and light themes</p>
                   </div>
                   <button 
-                    onClick={() => setDarkMode(!darkMode)}  
-                    className="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                    onClick={() => setDarkMode(!darkMode)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-teal-500 text-white font-bold text-xs"
                   >
-                    {darkMode ? 'Dark Enabled' : 'Light Enabled'}
+                    Toggle Theme
                   </button>
-                </div>
-
-                <div className={`p-5 rounded-2xl border flex items-center justify-between ${darkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-rose-50/30 border-rose-100'}`}>
-                  <div>
-                    <h4 className="font-black text-sm sm:text-base">Database Connection</h4>
-                    <p className="text-xs text-slate-400 font-semibold">Supabase tables & schemas</p>
-                  </div>
-                  <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">Connected</span>
-                </div>
-
-                <div className={`p-5 rounded-2xl border flex flex-col gap-2.5 ${darkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-rose-50/30 border-rose-100'}`}>
-                  <h4 className="font-black text-sm sm:text-base">Clinic Information</h4>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-bold">M Mehmood Unani Dawakhana — Gulshan-e-Iqbal, Karachi</p>  
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-bold">Hakeem Amjad Maqsood (+92 300 7071814)</p>  
                 </div>
               </div>
             </div>
           )}
 
         </main>
-
       </div>
     </div>
   );
