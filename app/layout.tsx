@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "M Mehmood Unani Dawakhana",
-  description: "Patient entry system",
+  description: "Patient system",
+  manifest: "/manifest.json", // Yeh line add kar di gayi hai
 };
 
 export default function RootLayout({
@@ -27,6 +28,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
         {children}
       </body>
