@@ -1,12 +1,22 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Users, Plus, RotateCcw, X, ChevronDown, Search, Sparkles, Activity, Leaf, HeartPulse, Sun, Moon, BarChart3, Settings as SettingsIcon, DollarSign, ShieldCheck, TrendingUp, LogOut, Printer, Download } from 'lucide-react';
+import { LayoutDashboard, Users, Plus, RotateCcw, X, ChevronDown, Search, Sparkles, Activity, Leaf, HeartPulse, Sun, Moon, BarChart3, Settings as SettingsIcon, DollarSign, ShieldCheck, TrendingUp, LogOut, Printer, Download, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function App() {
   const [mounted, setMounted] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
+  
+  // Custom Animated Toast Alert State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
   
   // Idle GIF state for 5 minutes inactivity
   const [isIdle, setIsIdle] = useState(false);
@@ -53,14 +63,29 @@ export default function App() {
   
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Helper for Date formatting: YYYY-MM-DD -> DD-MM-YYYY
+  const formatDateToDisplay = (dateStr: string) => {
+    if (!dateStr) return '';
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+    }
+    return dateStr;
+  };
+
+  const getTodayDateInput = () => new Date().toISOString().split('T')[0];
+
   const [modalPatient, setModalPatient] = useState<any>({ 
-    Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: new Date().toISOString().split('T')[0], isCrushed: false 
+    Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDateInput(), isCrushed: false 
   });
 
-  const getTodayDate = () => new Date().toISOString().split('T')[0];
-
   const [newPatient, setNewPatient] = useState<any>({ 
-    Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDate(), isCrushed: false 
+    Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDateInput(), isCrushed: false 
   });
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -168,7 +193,7 @@ export default function App() {
     setNewPatient({
       Id: patient.Id, Name: patient.Name || '', Address: patient.Address || '', Amount: patient.Amount || '',  
       Medicine: patient.Medicine?.replace(" ✨ [CRUSH]", "") || '', Syrup: patient.Syrup || '',  
-      Additional: patient.Additional || '', Date: patient.Date || getTodayDate(), isCrushed: patient.Medicine?.includes("✨ [CRUSH]") || false  
+      Additional: patient.Additional || '', Date: patient.Date || getTodayDateInput(), isCrushed: patient.Medicine?.includes("✨ [CRUSH]") || false  
     });
   }
 
@@ -176,18 +201,21 @@ export default function App() {
     setModalPatient({
       Id: patient.Id, Name: patient.Name || '', Address: patient.Address || '', Amount: patient.Amount || '',  
       Medicine: patient.Medicine?.replace(" ✨ [CRUSH]", "") || '', Syrup: patient.Syrup || '',  
-      Additional: patient.Additional || '', Date: patient.Date || getTodayDate(), isCrushed: patient.Medicine?.includes("✨ [CRUSH]") || false  
+      Additional: patient.Additional || '', Date: patient.Date || getTodayDateInput(), isCrushed: patient.Medicine?.includes("✨ [CRUSH]") || false  
     });
     setIsModalOpen(true);  
   }
 
   function handleClearDashboardForm() {
-    setNewPatient({ Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDate(), isCrushed: false });  
+    setNewPatient({ Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDateInput(), isCrushed: false });  
     setSelectedPatient(null);  
   }
 
   async function handleSaveFromDashboard() {
-    if (!newPatient.Name.trim()) return alert("Name field khali hai!");  
+    if (!newPatient.Name.trim()) {
+      showToast("Name field is empty!", "error");
+      return;
+    }
     let finalMedicine = newPatient.isCrushed ? newPatient.Medicine + " ✨ [CRUSH]" : newPatient.Medicine;  
     const { error } = await supabase.from('patients_table').insert([{  
       Name: capitalizeFirstLetter(newPatient.Name),  
@@ -198,12 +226,20 @@ export default function App() {
       Additional: capitalizeFirstLetter(newPatient.Additional),  
       Date: newPatient.Date  
     }]);
-    if (error) alert("Error: " + error.message);  
-    else { alert("Saved successfully!"); fetchData(); handleClearDashboardForm(); }  
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else { 
+      showToast("Patient saved successfully!"); 
+      fetchData(); 
+      handleClearDashboardForm(); 
+    }  
   }
 
   async function handleUpdateFromDashboard() {
-    if (!newPatient.Id) return alert("Select a patient first!");  
+    if (!newPatient.Id) {
+      showToast("Select a patient first!", "error");
+      return;
+    }
     let finalMedicine = newPatient.isCrushed ? newPatient.Medicine + " ✨ [CRUSH]" : newPatient.Medicine;  
     const { error } = await supabase.from('patients_table').update({  
       Name: capitalizeFirstLetter(newPatient.Name),  
@@ -214,20 +250,35 @@ export default function App() {
       Additional: capitalizeFirstLetter(newPatient.Additional),  
       Date: newPatient.Date  
     }).eq('Id', newPatient.Id);  
-    if (error) alert("Error: " + error.message);  
-    else { alert("Update kamyab raha!"); fetchData(); }  
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else { 
+      showToast("Patient updated successfully!"); 
+      fetchData(); 
+    }  
   }
 
   async function handleDeleteFromDashboard() {
-    if (!newPatient.Id) return alert("Select a patient first!");  
-    if (!confirm("Delete karna chahte hain?")) return;  
+    if (!newPatient.Id) {
+      showToast("Select a patient first!", "error");
+      return;
+    }
+    if (!confirm("Are you sure you want to delete?")) return;  
     const { error } = await supabase.from('patients_table').delete().eq('Id', newPatient.Id);  
-    if (error) alert("Error: " + error.message);  
-    else { alert("Deleted!"); fetchData(); handleClearDashboardForm(); }  
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else { 
+      showToast("Patient deleted successfully!"); 
+      fetchData(); 
+      handleClearDashboardForm(); 
+    }  
   }
 
   async function handleSaveFromModal() {
-    if (!modalPatient.Name.trim()) return alert("Name field khali hai!");  
+    if (!modalPatient.Name.trim()) {
+      showToast("Name field is empty!", "error");
+      return;
+    }
     let finalMedicine = modalPatient.isCrushed ? modalPatient.Medicine + " ✨ [CRUSH]" : modalPatient.Medicine;  
     const { error } = await supabase.from('patients_table').insert([{  
       Name: capitalizeFirstLetter(modalPatient.Name),  
@@ -238,12 +289,20 @@ export default function App() {
       Additional: capitalizeFirstLetter(modalPatient.Additional),  
       Date: modalPatient.Date  
     }]);
-    if (error) alert("Error: " + error.message);  
-    else { alert("Saved successfully!"); fetchData(); setIsModalOpen(false); }  
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else { 
+      showToast("Patient saved successfully!"); 
+      fetchData(); 
+      setIsModalOpen(false); 
+    }  
   }
 
   async function handleUpdateFromModal() {
-    if (!modalPatient.Id) return alert("Patient ID missing!");  
+    if (!modalPatient.Id) {
+      showToast("Patient ID missing!", "error");
+      return;
+    }
     let finalMedicine = modalPatient.isCrushed ? modalPatient.Medicine + " ✨ [CRUSH]" : modalPatient.Medicine;  
     const { error } = await supabase.from('patients_table').update({  
       Name: capitalizeFirstLetter(modalPatient.Name),  
@@ -254,21 +313,34 @@ export default function App() {
       Additional: capitalizeFirstLetter(modalPatient.Additional),  
       Date: modalPatient.Date  
     }).eq('Id', modalPatient.Id);  
-    if (error) alert("Error: " + error.message);  
-    else { alert("Updated successfully!"); fetchData(); setIsModalOpen(false); }  
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else { 
+      showToast("Patient updated successfully!"); 
+      fetchData(); 
+      setIsModalOpen(false); 
+    }  
   }
 
   async function handleDeleteFromModal() {
-    if (!modalPatient.Id) return alert("Patient ID missing!");  
-    if (!confirm("Delete karna chahte hain?")) return;  
+    if (!modalPatient.Id) {
+      showToast("Patient ID missing!", "error");
+      return;
+    }
+    if (!confirm("Are you sure you want to delete?")) return;  
     const { error } = await supabase.from('patients_table').delete().eq('Id', modalPatient.Id);  
-    if (error) alert("Error: " + error.message);  
-    else { alert("Deleted!"); fetchData(); setIsModalOpen(false); }  
+    if (error) {
+      showToast("Error: " + error.message, "error");
+    } else { 
+      showToast("Patient deleted successfully!"); 
+      fetchData(); 
+      setIsModalOpen(false); 
+    }  
   }
 
   const handleDownloadSlip = async () => {
     const pName = selectedPatient ? selectedPatient.Name : (newPatient.Name || "Patient");
-    const pDate = selectedPatient ? selectedPatient.Date : newPatient.Date;
+    const pDate = formatDateToDisplay(selectedPatient ? selectedPatient.Date : newPatient.Date);
     const pId = selectedPatient?.Id || 'NEW';
     const pAddress = selectedPatient ? selectedPatient.Address : newPatient.Address;
     const pAdditional = selectedPatient ? selectedPatient.Additional : newPatient.Additional;
@@ -417,15 +489,16 @@ export default function App() {
       doc.text("Get well soon! Thank you for visiting our dawakhana.", 74, yPos, { align: "center" });
 
       doc.save(`Slip_${pName.replace(/\s+/g, '_')}_${pDate}.pdf`);
+      showToast("PDF slip downloaded successfully!");
     } catch (err) {
       console.error("PDF generation error:", err);
-      alert("PDF generate karne mein masla aaya hai.");
+      showToast("Failed to generate PDF slip.", "error");
     }
   };
 
   const totalPatientsCount = patients.length;  
   const totalRevenue = patients.reduce((sum, p) => sum + (parseFloat(p.Amount) || 0), 0);  
-  const todayPatientsCount = patients.filter(p => p.Date === getTodayDate()).length;  
+  const todayPatientsCount = patients.filter(p => p.Date === getTodayDateInput()).length;  
   const avgRevenuePerPatient = totalPatientsCount > 0 ? Math.round(totalRevenue / totalPatientsCount) : 0;  
 
   useEffect(() => { setMounted(true); fetchData(); }, []);  
@@ -443,21 +516,36 @@ export default function App() {
     }}
     >
       
-      {/* CSS Animations for Large Side Texts & Marquee */}
+      {/* CSS Animations & Toast Slide Keyframes */}
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes singleUpDownBlink {
-          0% { transform: translateY(-35px); opacity: 0.2; }
-          50% { transform: translateY(35px); opacity: 1; text-shadow: 0 0 30px rgba(220,38,38,0.8); }
-          100% { transform: translateY(-35px); opacity: 0.2; }
+        @keyframes slideInDown {
+          0% { transform: translateY(-20px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
         }
-        @keyframes pulseGlow {
-          0%, 100% { transform: scale(1); opacity: 0.9; }
-          50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 20px rgba(5,150,105,0.6)); }
+        .animate-toast {
+          animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         @media (max-width: 1200px) {
           .side-decoration { display: none !important; }
         }
       `}} />
+
+      {/* CUSTOM ANIMATED TOAST NOTIFICATION CONTAINER */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-50 animate-toast">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md ${
+            toast.type === 'success'
+              ? darkMode ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-950/50' : 'bg-emerald-50/95 border-emerald-200 text-emerald-900 shadow-emerald-500/10'
+              : darkMode ? 'bg-rose-950/90 border-rose-500/40 text-rose-200 shadow-rose-950/50' : 'bg-rose-50/95 border-rose-200 text-rose-900 shadow-rose-500/10'
+          }`}>
+            <CheckCircle2 size={20} className={toast.type === 'success' ? 'text-emerald-500 flex-shrink-0' : 'text-rose-500 flex-shrink-0'} />
+            <span className="font-extrabold text-xs sm:text-sm tracking-wide">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 opacity-70 hover:opacity-100 transition">
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 5-MINUTES IDLE ANIMATED FLOATING GIF OVERLAY */}
       {isIdle && (
@@ -475,15 +563,14 @@ export default function App() {
             }
           `}} />
          <div className="floating-gif p-3 bg-gradient-to-r from-rose-500 via-teal-500 to-amber-500 rounded-full shadow-2xl">
-    <img 
-      src="/M mehmood unani dawakhhana.gif" 
-      alt="M Mehmood Unani Dawakhhana" 
-      className="w-56 h-56 sm:w-100 sm:h-100 object-cover rounded-full border-4 border-white shadow-2xl"
-    />
-</div>
+          <div className="w-56 h-56 sm:w-100 sm:h-100 rounded-full border-4 border-white shadow-2xl bg-white flex items-center justify-center overflow-hidden">
+            <span className="text-xl sm:text-3xl font-bold text-black animate-pulse text-center p-4">
+            ایم محمود یونی دواخانہ
+            </span>
+          </div>
+        </div>
         </div>
       )}
-
 
       {/* HEADER */}
       <header className={`h-14 px-3 sm:px-5 flex-shrink-0 flex justify-between items-center z-40 border-b transition-colors duration-300 relative ${  
@@ -592,14 +679,32 @@ export default function App() {
               <span>Settings</span>
             </button>
 
-            <div className="hidden lg:flex flex-col px-1 pt-4 pb-1 flex-1">
-              <img 
-                src="/Your paragraph text (1)111.png"  
-                alt="M Mehmood Unani Dawakhhana"  
-                className={`w-full h-full min-h-[240px] rounded-2xl object-cover shadow-sm border-0 transition-all duration-300 ${  
-                  darkMode ? 'brightness-0 invert' : ''  
-                }`}
-              />
+            <div className="hidden lg:flex flex-col px-1 pt-4 pb-1 flex-1 items-center justify-center">
+              <div className={`w-full h-full min-h-[240px] rounded-2xl flex flex-col items-center justify-center p-6 text-center border shadow-lg transition-all duration-300 ${
+                darkMode ? 'bg-slate-900/80 border-slate-700 text-white shadow-emerald-950/20' : 'bg-gradient-to-br from-rose-50/80 to-amber-50/50 border-rose-200 text-slate-800 shadow-rose-100'
+              }`}>
+                <div className="mb-4 w-20 h-20 rounded-full overflow-hidden border-2 border-emerald-500/30 shadow-md animate-bounce bg-white/50 flex items-center justify-center">
+                  <img 
+                    src="/pngwing.png" 
+                    alt="M Mehmood Unani Dawakhana Logo" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="space-y-2 animate-pulse">
+                  <h2 className="text-2xl font-extrabold tracking-wide">
+                    <span className="text-green-500">ایم</span>{' '}
+                    <span className="text-sky-400">محمود</span>{' '}
+                    <span className="text-pink-500">یونی</span>{' '}
+                    <span className="text-red-500">دواخانہ</span>
+                  </h2>
+                  <h3 className="text-lg font-semibold tracking-wider">
+                    <span className="text-green-500">M</span>{' '}
+                    <span className="text-sky-400">Mehmood</span>{' '}
+                    <span className="text-pink-500">Unani</span>{' '}
+                    <span className="text-red-500">Dawakhana</span>
+                  </h3>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -685,7 +790,7 @@ export default function App() {
                 </div>
 
                 <div className="flex justify-between items-center text-xs font-bold text-slate-500 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
-                  <span>Date: <strong className="text-slate-800">{selectedPatient ? selectedPatient.Date : newPatient.Date}</strong></span>  
+                  <span>Date: <strong className="text-slate-800">{formatDateToDisplay(selectedPatient ? selectedPatient.Date : newPatient.Date)}</strong></span>  
                   <span>Slip ID: <strong className="text-slate-800">#{selectedPatient?.Id || 'NEW'}</strong></span>  
                 </div>
 
@@ -778,7 +883,7 @@ export default function App() {
                     <h4 className="font-extrabold text-sm sm:text-base flex items-center gap-2 text-rose-600 dark:text-rose-400">
                       <HeartPulse size={18} className="text-rose-500 animate-pulse"/> Profile Summary  
                     </h4>
-                    <span className="text-xs sm:text-sm font-bold text-slate-400">{modalPatient.Date || getTodayDate()}</span>  
+                    <span className="text-xs sm:text-sm font-bold text-slate-400">{formatDateToDisplay(modalPatient.Date || getTodayDateInput())}</span>  
                   </div>
 
                   <div className="flex justify-between items-center text-sm sm:text-base">
@@ -787,13 +892,13 @@ export default function App() {
                   </div>
 
                   {modalPatient.Address && (
-                    <div className="text-xs sm:text-sm font-black text-black dark:text-black truncate">
+                    <div className="text-xs sm:text-sm font-black text-slate-700 dark:text-slate-200 truncate">
                       <span className="font-bold text-slate-400">Address: </span>{modalPatient.Address}  
                     </div>
                   )}
 
                   {modalPatient.Additional && (
-                    <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
+                    <div className="text-xs sm:text-sm font-black text-slate-700 dark:text-slate-200 truncate">
                       <span className="font-bold text-slate-400">Additional: </span>{modalPatient.Additional}  
                     </div>
                   )}
@@ -904,7 +1009,7 @@ export default function App() {
                     <Sparkles size={16} className="text-amber-500 animate-spin" /> Patient Form  
                   </h3>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => { setModalPatient({ Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDate(), isCrushed: false }); setIsModalOpen(true); }} className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-500/20">
+                    <button onClick={() => { setModalPatient({ Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDateInput(), isCrushed: false }); setIsModalOpen(true); }} className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-500/20">
                       <Plus size={14} /> Add Patient  
                     </button>
                     <button onClick={handleClearDashboardForm} className={`p-2 rounded-xl border transition ${darkMode ? 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800' : 'bg-rose-50/50 border-rose-200 text-slate-700 hover:bg-rose-100'}`}>
@@ -1020,18 +1125,18 @@ export default function App() {
                   <div className={`p-4 rounded-2xl border flex flex-col gap-3 ${darkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-rose-50/40 border-rose-200/60'}`}>
                     <div className="flex justify-between items-center">
                       <h4 className="font-black text-base sm:text-lg break-words pr-2">{selectedPatient ? selectedPatient.Name : (newPatient.Name || "No Patient Selected")}</h4>  
-                      <span className="text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">{selectedPatient ? selectedPatient.Date : newPatient.Date}</span>  
+                      <span className="text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">{formatDateToDisplay(selectedPatient ? selectedPatient.Date : newPatient.Date)}</span>  
                     </div>
                     
                     {(selectedPatient?.Address || newPatient.Address) && (
-                      <div className="text-xs sm:text-sm font-black text-black dark:text-black whitespace-pre-wrap break-words">
+                      <div className="text-xs sm:text-sm font-black text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words">
                         <span className="font-bold text-slate-400">Address: </span>  
                         {selectedPatient ? selectedPatient.Address : newPatient.Address}  
                       </div>
                     )}
 
                     {(selectedPatient?.Additional || newPatient.Additional) && (
-                      <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-black whitespace-pre-wrap break-words">
+                      <div className="text-xs sm:text-sm font-black text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words">
                         <span className="font-bold text-slate-400">Additional: </span>  
                         {selectedPatient ? selectedPatient.Additional : newPatient.Additional}  
                       </div>
@@ -1073,7 +1178,6 @@ export default function App() {
                         }`} 
                       />
                     </div>
-                    {/* Search Button */}
                     <button 
                       onClick={() => handleServerSearch(searchTerm)}  
                       title="Search"
@@ -1120,7 +1224,7 @@ export default function App() {
                         </div>
                         <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                           <span className="text-xs sm:text-sm font-black text-rose-500">{pat.Amount || "0"}</span>  
-                          <span className="text-[10px] font-bold text-slate-400">{pat.Date}</span>  
+                          <span className="text-[10px] font-bold text-slate-400">{formatDateToDisplay(pat.Date)}</span>  
                         </div>
                       </div>
                     ))}
@@ -1145,7 +1249,7 @@ export default function App() {
                     </h3>
                     <button 
                       onClick={() => { 
-                        setModalPatient({ Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDate(), isCrushed: false });  
+                        setModalPatient({ Id: null, Name: '', Address: '', Amount: '', Medicine: '', Syrup: '', Additional: '', Date: getTodayDateInput(), isCrushed: false });  
                         setIsModalOpen(true);  
                       }} 
                       className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
@@ -1191,11 +1295,11 @@ export default function App() {
                           }`}
                         >
                           <td className="p-3.5 font-black whitespace-pre-wrap break-words">{pat.Name}</td>  
-                          <td className="p-3.5 text-slate-400 whitespace-nowrap font-bold">{pat.Date}</td>  
-                          <td className="p-3.5 text-slate-500 dark:text-slate-400 whitespace-pre-wrap break-words">{pat.Address || "-"}</td>  
+                          <td className="p-3.5 text-slate-400 whitespace-nowrap font-bold">{formatDateToDisplay(pat.Date)}</td>  
+                          <td className="p-3.5 text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words">{pat.Address || "-"}</td>  
                           <td className="p-3.5 text-teal-600 dark:text-teal-400 font-bold whitespace-pre-wrap break-words">{pat.Medicine || "-"}</td>  
                           <td className="p-3.5 text-indigo-600 dark:text-indigo-400 font-bold whitespace-pre-wrap break-words">{pat.Syrup || "-"}</td>  
-                          <td className="p-3.5 text-slate-500 dark:text-slate-400 whitespace-pre-wrap break-words">{pat.Additional || "-"}</td>  
+                          <td className="p-3.5 text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words">{pat.Additional || "-"}</td>  
                           <td className="p-3.5 font-black text-rose-500 whitespace-nowrap">{pat.Amount || "0"}</td>  
                         </tr>
                       ))}
