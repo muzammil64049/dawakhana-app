@@ -681,31 +681,36 @@ export default function App() {
             </button>
 
             <div className="hidden lg:flex flex-col px-1 pt-2 pb-1 flex-1 items-center justify-center">
-              <div className={`w-full h-full min-h-[220px] rounded-2xl flex flex-col items-center justify-center p-4 text-center border shadow-lg transition-all duration-300 ${
-                darkMode ? 'bg-slate-900/80 border-slate-700 text-white shadow-emerald-950/20' : 'bg-gradient-to-br from-rose-50/80 to-amber-50/50 border-rose-200 text-slate-800 shadow-rose-100'
-              }`}>
-                <div className="mb-2 w-20 h-20 rounded-full overflow-hidden border-2 border-emerald-500/30 shadow-md animate-bounce bg-white/50 flex items-center justify-center">
-                  <img 
-                    src="/pngwing.png" 
-                    alt="M Mehmood Unani Dawakhana Logo" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="space-y-1 animate-pulse">
-                  <h2 className="text-base font-extrabold tracking-wide">
-                    <span className="text-green-500">ایم</span>{' '}
-                    <span className="text-sky-400">محمود</span>{' '}
-                    <span className="text-pink-500">یونانی</span>{' '}
-                    <span className="text-red-500">دواخانہ</span>{' '}
-                    <span className="text-green-500">M</span>{' '}
-                    <span className="text-sky-400">Mehmood</span>{' '}
-                    <span className="text-pink-500">Unani</span>{' '}
-                    <span className="text-red-500">Dawakhana</span>
-                  </h2>
-                </div>
-              </div>
-            </div>
-          </div>
+  <div className={`w-full h-full min-h-[240px] rounded-2xl flex flex-col items-center justify-center p-4 text-center border shadow-lg transition-all duration-300 ${
+    darkMode ? 'bg-slate-900/80 border-slate-700 text-white shadow-emerald-950/20' : 'bg-gradient-to-br from-rose-50/80 to-amber-50/50 border-rose-200 text-slate-800 shadow-rose-100'
+  }`}>
+    <div className="mb-2 w-20 h-20 rounded-full overflow-hidden border-2 border-emerald-500/30 shadow-md animate-bounce bg-white/50 flex items-center justify-center">
+      <img 
+        src="/pngwing.png" 
+        alt="M Mehmood Unani Dawakhana Logo" 
+        className="w-full h-full object-cover"
+      />
+    </div>
+    <div className="space-y-1 animate-pulse">
+      <h2 className="text-base md:text-lg lg:text-xl font-extrabold tracking-wide leading-relaxed">
+        <div>
+          <span className="text-green-500">ایم</span>{' '}
+          <span className="text-sky-400">محمود</span>{' '}
+          <span className="text-pink-500">یونانی</span>{' '}
+          <span className="text-red-500">دواخانہ</span>
+        </div>
+        <div className="mt-1">
+          <span className="text-green-500">M</span>{' '}
+          <span className="text-sky-400">Mehmood</span>{' '}
+          <span className="text-pink-500">Unani</span>{' '}
+          <span className="text-red-500">Dawakhana</span>
+        </div>
+      </h2>
+    </div>
+  </div>
+</div>
+</div>
+
 
           <div className="pt-0 lg:pt-2 lg:border-t border-rose-200/40 dark:border-slate-800 flex-shrink-0">
             <button 
@@ -985,6 +990,8 @@ export default function App() {
                       </div>
                       <span className="font-extrabold text-xs">Crush Med</span>
                     </label>
+                    
+                    <label className="text-[10px] font-bold text-slate-400">Amount</label>
                     <input placeholder="Amount" className={`px-3 py-2 rounded-xl border font-black text-xs h-9 outline-none transition ${darkMode ? 'bg-slate-900 border-slate-800 text-white focus:border-rose-500' : 'bg-rose-50/30 border-rose-100 focus:border-rose-400'}`} value={modalPatient.Amount} onChange={(e) => setModalPatient({...modalPatient, Amount: e.target.value})} />  
                   </div>
                 </div>
